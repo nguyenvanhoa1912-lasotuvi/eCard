@@ -26,10 +26,10 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build APK (debug – cài thẳng lên điện thoại)
+      - name: Build APK (release – đã tối ưu dung lượng)
         run: |
           set -o pipefail
-          gradle :app:assembleDebug 2>&1 | tee build.log
+          gradle :app:assembleRelease 2>&1 | tee build.log
 
       - name: Báo lỗi biên dịch (nếu có)
         if: failure()
@@ -43,7 +43,7 @@ jobs:
           done < errors.txt
 
       - name: Đổi tên APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk eCard.apk
+        run: cp app/build/outputs/apk/release/app-release.apk eCard.apk
 
       - name: Tải APK lên mục Artifacts
         uses: actions/upload-artifact@v4
