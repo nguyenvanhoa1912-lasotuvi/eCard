@@ -1,6 +1,11 @@
 package vn.ecard.app.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -38,6 +43,8 @@ import androidx.compose.ui.unit.sp
 import vn.ecard.app.data.CalEvent
 import vn.ecard.app.data.Category
 import vn.ecard.app.data.Occasion
+
+const val PRIVACY_URL = "https://nguyenvanhoa1912-lasotuvi.github.io/eCard/privacy-policy.html"
 
 @Composable
 fun HomeScreen(upcoming: List<CalEvent>, onOpen: (Occasion, String?) -> Unit) {
@@ -104,6 +111,28 @@ fun HomeScreen(upcoming: List<CalEvent>, onOpen: (Occasion, String?) -> Unit) {
             }
             items(Occasion.values().filter { it.category == cat }) { o ->
                 OccasionTile(o) { onOpen(o, null) }
+            }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            val ctx = LocalContext.current
+            val version = remember {
+                runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: ""
+            }
+            Column(
+                Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Chính sách quyền riêng tư",
+                    color = EC.Gold, fontSize = 13.sp,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable {
+                        runCatching {
+                            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_URL)))
+                        }
+                    }.padding(8.dp)
+                )
+                Text("eCard – Tự Tạo Thiệp · phiên bản $version", color = EC.Muted, fontSize = 11.sp)
             }
         }
     }
