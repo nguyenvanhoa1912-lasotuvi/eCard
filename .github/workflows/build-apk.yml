@@ -1,4 +1,7 @@
-name: Build APK
+# Build trên máy chủ GitHub:
+#  - eCard.apk : cài tay lên điện thoại (khoá cố định trong repo)
+#  - eCard.aab : tải lên Google Play (ký bằng khoá tải lên lấy từ GitHub Secrets)
+name: Build APK + AAB
 
 on:
   push:
@@ -21,15 +24,41 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Cài Gradle 8.9
+      - name: Cài Gradle 8.14.3
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
+          gradle-version: "8.14.3"
 
-      - name: Build APK (release – đã tối ưu dung lượng)
+      - name: Build APK (release – cài tay)
         run: |
           set -o pipefail
           gradle :app:assembleRelease 2>&1 | tee build.log
+
+      - name: Giải mã khoá tải lên (nếu đã cài Secrets)
+        id: key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::warning::Chưa cài 4 secrets ANDROID_* -> bỏ qua bản AAB cho Google Play."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build AAB cho Google Play
+        if: steps.key.outputs.ok == 'true'
+        env:
+          SIGN_WITH_UPLOAD: "1"
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -o pipefail
+          gradle :app:bundleRelease 2>&1 | tee -a build.log
+          cp app/build/outputs/bundle/release/app-release.aab eCard.aab
 
       - name: Báo lỗi biên dịch (nếu có)
         if: failure()
@@ -45,18 +74,24 @@ jobs:
       - name: Đổi tên APK
         run: cp app/build/outputs/apk/release/app-release.apk eCard.apk
 
-      - name: Tải APK lên mục Artifacts
+      - name: Tải lên mục Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: eCard-apk
-          path: eCard.apk
+          name: eCard-build
+          path: |
+            eCard.apk
+            eCard.aab
+          if-no-files-found: ignore
           retention-days: 7
 
-      - name: Đăng APK lên Releases (link tải trực tiếp)
+      - name: Đăng lên Releases (link tải trực tiếp)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest eCard.apk \
-            --title "eCard - Tự Tạo Thiệp – bản mới nhất" \
-            --notes "Build tự động từ commit ${GITHUB_SHA::7}. Tải eCard.apk và cài trực tiếp trên điện thoại."
+          FILES="eCard.apk"; [ -f eCard.aab ] && FILES="$FILES eCard.aab"
+          gh release create latest $FILES \
+            --title "eCard - Tự Tạo Thiệp – bản ${GITHUB_RUN_NUMBER}" \
+            --notes "Build tự động từ commit ${GITHUB_SHA::7} (versionCode ${GITHUB_RUN_NUMBER}).
+          - eCard.apk: cài trực tiếp lên điện thoại.
+          - eCard.aab: tải lên Google Play Console (kiểm thử kín / phát hành)."

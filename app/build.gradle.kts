@@ -6,15 +6,15 @@ plugins {
 
 android {
     namespace = "vn.ecard.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         // Mã định danh riêng – không trùng với các app khác đã cài
         applicationId = "vn.nguyenvanhoa.ecard"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36  // Google Play bắt buộc API 36 từ 31/8/2026
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.0.0"
+        versionName = "1.0." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
     }
 
     // Khoá ký cố định: mọi bản build cùng chữ ký -> cài đè được, không mất dữ liệu
@@ -25,6 +25,16 @@ android {
             keyAlias = "ecard"
             keyPassword = "ecard2b33b0d4319f"
         }
+        // Khoá TẢI LÊN Google Play: lấy từ GitHub Secrets, không lưu trong repo
+        val uploadPath = System.getenv("ANDROID_KEYSTORE_PATH")
+        if (System.getenv("SIGN_WITH_UPLOAD") == "1" && uploadPath != null) {
+            create("upload") {
+                storeFile = file(uploadPath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -32,7 +42,8 @@ android {
             signingConfig = signingConfigs.getByName("fixed")
         }
         release {
-            signingConfig = signingConfigs.getByName("fixed")
+            // APK cài tay: khoá cố định; AAB cho Google Play: khoá tải lên
+            signingConfig = signingConfigs.findByName("upload") ?: signingConfigs.getByName("fixed")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
