@@ -80,7 +80,7 @@ fun LibraryScreen(onUse: (Phrase) -> Unit) {
             if (occs.size > 1) {
                 FilterChip(selected = occ == null, onClick = { occ = null }, label = { Text("Tất cả") }, colors = chipColors())
                 occs.forEach { o ->
-                    FilterChip(selected = occ == o, onClick = { occ = o }, label = { Text(o.icon + " " + o.title.vi, fontSize = 13.sp) }, colors = chipColors())
+                    FilterChip(selected = occ == o, onClick = { occ = o }, label = { Text(o.icon + " " + o.label, fontSize = 13.sp) }, colors = chipColors())
                 }
             }
         }

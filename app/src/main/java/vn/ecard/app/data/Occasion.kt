@@ -25,6 +25,7 @@ enum class Category(val label: String) {
 }
 
 enum class Occasion(val title: Tri, val category: Category, val icon: String, val solemn: Boolean = false) {
+
     TET(Tri("Chúc Mừng Năm Mới", "Happy Lunar New Year", "恭賀新禧"), Category.CHUC_MUNG, "🧧"),
     NEW_YEAR(Tri("Chúc Mừng Năm Mới", "Happy New Year", "新年快樂"), Category.CHUC_MUNG, "🎆"),
     BIRTHDAY(Tri("Chúc Mừng Sinh Nhật", "Happy Birthday", "生日快樂"), Category.CHUC_MUNG, "🎂"),
@@ -51,4 +52,12 @@ enum class Occasion(val title: Tri, val category: Category, val icon: String, va
     INVITE_MEMORIAL(Tri("Kính Mời Dự Lễ Giỗ", "Memorial Ceremony Invitation", "敬邀出席追思禮"), Category.LOI_MOI, "🪷", solemn = true),
 
     WISDOM(Tri("Lời Hay Ý Đẹp", "Words of Wisdom", "嘉言錦句"), Category.LOI_HAY, "✨");
+
+    /** Nhãn hiển thị trên ô chọn dịp (ngắn, không trùng nhau). */
+    val label: String get() = when (this) {
+        TET -> "Tết Nguyên Đán"
+        NEW_YEAR -> "Năm Mới Dương Lịch"
+        else -> title.vi
+    }
+
 }

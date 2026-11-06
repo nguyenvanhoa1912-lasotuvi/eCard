@@ -152,6 +152,7 @@ object CardRenderer {
             .setAlignment(Layout.Alignment.ALIGN_CENTER)
             .setLineSpacing(0f, 1.12f)
             .setIncludePad(false)
+            .setBreakStrategy(android.graphics.text.LineBreaker.BREAK_STRATEGY_BALANCED)
             .build()
 
     private fun drawTexts(

@@ -245,7 +245,7 @@ private fun TemplateTab(spec: CardSpec, onChange: (CardSpec) -> Unit) {
     Label("Dịp")
     ChipRow {
         Occasion.values().forEach { o ->
-            Chip(spec.occasion == o, o.icon + " " + o.title.vi) { onChange(specFor(o, null, spec)) }
+            Chip(spec.occasion == o, o.icon + " " + o.label) { onChange(specFor(o, null, spec)) }
         }
     }
     Label("Bảng màu")

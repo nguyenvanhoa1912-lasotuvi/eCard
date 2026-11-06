@@ -73,7 +73,8 @@ fun HomeScreen(upcoming: List<CalEvent>, onOpen: (Occasion, String?) -> Unit) {
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text("eCard – Tự Tạo Thiệp", color = EC.Gold, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                        Text("Đông · Tây · Kim · Cổ  |  Việt · English · 中文", color = EC.Text.copy(alpha = 0.85f), fontSize = 13.sp)
+                        Text("Đông · Tây · Kim · Cổ", color = EC.Text.copy(alpha = 0.85f), fontSize = 13.sp)
+                        Text("Việt · English · 中文", color = EC.Text.copy(alpha = 0.85f), fontSize = 13.sp)
                     }
                 }
                 if (upcoming.isNotEmpty()) {
@@ -154,7 +155,7 @@ private fun OccasionTile(o: Occasion, onClick: () -> Unit) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(o.icon, fontSize = 28.sp)
             Spacer(Modifier.height(4.dp))
-            Text(o.title.vi, color = EC.Text, fontSize = 12.sp, textAlign = TextAlign.Center, lineHeight = 14.sp, maxLines = 2)
+            Text(o.label, color = EC.Text, fontSize = 12.sp, textAlign = TextAlign.Center, lineHeight = 14.sp, maxLines = 2)
             Text(o.title.zh, color = EC.Muted, fontSize = 11.sp, maxLines = 1)
         }
     }
