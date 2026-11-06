@@ -1,6 +1,13 @@
 package vn.ecard.app.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.painterResource
+import vn.ecard.app.R
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,8 +58,17 @@ fun HomeScreen(upcoming: List<CalEvent>, onOpen: (Occasion, String?) -> Unit) {
                     .border(1.dp, EC.Gold.copy(alpha = 0.6f), RoundedCornerShape(18.dp))
                     .padding(16.dp)
             ) {
-                Text("eCard – Tự Tạo Thiệp", color = EC.Gold, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text("Đông · Tây · Kim · Cổ  |  Việt · English · 中文", color = EC.Text.copy(alpha = 0.85f), fontSize = 13.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painterResource(R.drawable.ic_launcher_foreground), "Logo eCard",
+                        modifier = Modifier.size(64.dp).clip(CircleShape).background(Color(0xFFFAF7F1)).scale(1.45f)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("eCard – Tự Tạo Thiệp", color = EC.Gold, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text("Đông · Tây · Kim · Cổ  |  Việt · English · 中文", color = EC.Text.copy(alpha = 0.85f), fontSize = 13.sp)
+                    }
+                }
                 if (upcoming.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     Text("Sắp tới", color = EC.Gold, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)

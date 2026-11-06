@@ -92,7 +92,7 @@ class ReminderWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(c
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 val n = NotificationCompat.Builder(ctx, CHANNEL)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setSmallIcon(R.drawable.ic_notify)
                     .setContentTitle(title)
                     .setContentText(body)
                     .setStyle(NotificationCompat.BigTextStyle().bigText(body))
