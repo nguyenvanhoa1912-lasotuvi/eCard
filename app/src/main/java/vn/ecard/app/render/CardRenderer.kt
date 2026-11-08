@@ -48,6 +48,16 @@ object CardRenderer {
         val rnd = Random(spec.occasion.ordinal * 31 + spec.style.ordinal * 7 + spec.tone.ordinal)
         val hasPhoto = spec.photo != null
 
+        // ── Khung chủ đề riêng của dịp ──
+        if (!hasPhoto && spec.frame > 0 && ThemeFrames.has(spec.occasion)) {
+            val fr = ThemeFrames.draw(cv, w, h, spec.occasion, spec.frame)
+            val tc = spec.textColor ?: fr.title
+            val bc = spec.textColor ?: fr.body
+            val sh = spec.textColor != null && ((luminance(spec.textColor) > 0.6f) != fr.dark)
+            drawTexts(cv, w, h, u, spec, tc, bc, sh, fr.ornament, fr.area, fr.divider, fr.area.right)
+            return
+        }
+
         // Nền tối hay sáng quyết định màu chữ
         val darkBg = hasPhoto || spec.style == CardStyle.EAST_CLASSIC || spec.style == CardStyle.WEST_MODERN
 
@@ -134,7 +144,9 @@ object CardRenderer {
             else -> { titleColor = p.inkDark; bodyColor = p.inkDark }
         }
         val shadow = hasPhoto || (spec.textColor != null && luminance(spec.textColor) > 0.6f && !darkBg)
-        drawTexts(cv, w, h, u, spec, titleColor, bodyColor, shadow, if (hasPhoto) Color.WHITE else if (darkBg) p.accent else p.accent2)
+        val area = RectF(if (spec.style == CardStyle.EAST_MODERN) 110 * u else 120 * u, 150 * u, w - 120 * u, h - 120 * u)
+        val sigX = if (spec.style == CardStyle.EAST_CLASSIC && !hasPhoto) w - 230 * u else area.right
+        drawTexts(cv, w, h, u, spec, titleColor, bodyColor, shadow, if (hasPhoto) Color.WHITE else if (darkBg) p.accent else p.accent2, area, spec.style, sigX)
 
         // Ấn triện (Đông phương cổ điển)
         if (spec.style == CardStyle.EAST_CLASSIC && !hasPhoto) {
@@ -145,7 +157,7 @@ object CardRenderer {
     // ───────────────────────── chữ ─────────────────────────
 
     private fun typeface(spec: CardSpec, bold: Boolean): Typeface =
-        Typeface.create(spec.font.family, if (bold) Typeface.BOLD else Typeface.NORMAL)
+        CardFonts.typeface(spec.font, if (bold && !spec.font.calligraphy) Typeface.BOLD else Typeface.NORMAL)
 
     private fun layout(text: String, paint: TextPaint, width: Int): StaticLayout =
         StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
@@ -157,15 +169,18 @@ object CardRenderer {
 
     private fun drawTexts(
         cv: Canvas, w: Float, h: Float, u: Float, spec: CardSpec,
-        titleColor: Int, bodyColor: Int, shadow: Boolean, ornamentColor: Int
+        titleColor: Int, bodyColor: Int, shadow: Boolean, ornamentColor: Int,
+        area: RectF, dividerStyle: CardStyle, sigX: Float
     ) {
         val langs = spec.langs.ifEmpty { listOf(Lang.VI) }
-        val left = if (spec.style == CardStyle.EAST_MODERN) 110 * u else 120 * u
-        val right = w - 120 * u
-        val width = (right - left).toInt()
-        val sigReserve = if (spec.signature.isNotBlank()) 130 * u else 40 * u
-        val top = 150 * u
-        val bottom = h - 150 * u - sigReserve
+        val left = area.left
+        val right = area.right
+        val width = (right - left).toInt().coerceAtLeast(50)
+        val sigReserve = if (spec.signature.isNotBlank()) 90 * u else 0f
+        val bigReserve = if (spec.bigWord.isNotBlank()) 240 * u else 0f
+        val top = area.top
+        val bottom = max(top + 120 * u, area.bottom - sigReserve - bigReserve)
+        val calli = if (spec.font.calligraphy) 1.18f else 1f
 
         var s = spec.textScale
         var blocks: List<Triple<StaticLayout, Float, Boolean>> = emptyList()
@@ -175,14 +190,14 @@ object CardRenderer {
             langs.forEachIndexed { i, l ->
                 val t = spec.title[l].orEmpty().trim()
                 if (t.isNotEmpty()) {
-                    val tp = textPaint(spec, l, true, titleColor, (if (i == 0) 84f else 50f) * u * s, shadow, u)
+                    val tp = textPaint(spec, l, true, titleColor, (if (i == 0) 84f else 50f) * u * s * calli, shadow, u)
                     b += Triple(layout(t, tp, width), if (b.isEmpty()) 0f else 14 * u * s, true)
                 }
             }
             val titleCount = b.size
             val msgs = langs.mapNotNull { l -> spec.message[l]?.trim()?.takeIf { it.isNotEmpty() }?.let { l to it } }
             msgs.forEachIndexed { i, (l, m) ->
-                val size = (if (msgs.size == 1) 46f else if (i == 0) 42f else 36f) * u * s
+                val size = (if (msgs.size == 1) 46f else if (i == 0) 42f else 36f) * u * s * calli
                 val mp = textPaint(spec, l, false, bodyColor, size, shadow, u)
                 val gap = if (i == 0) (if (titleCount > 0) 110 * u * s else 0f) else 34 * u * s
                 b += Triple(layout(m, mp, width), gap, false)
@@ -202,7 +217,7 @@ object CardRenderer {
             if (!titlesDone && idx > 0 && !isTitle) {
                 titlesDone = true
                 // Đường phân cách hoa văn giữa tiêu đề và lời chúc
-                divider(cv, w / 2f, y + gap / 2f, 120 * u, ornamentColor, u, spec.style)
+                divider(cv, (left + right) / 2f, y + gap / 2f, 120 * u, ornamentColor, u, dividerStyle)
             }
             y += gap
             cv.save()
@@ -212,13 +227,41 @@ object CardRenderer {
             y += lay.height
         }
 
-        if (spec.signature.isNotBlank()) {
-            val sp = textPaint(spec, Lang.VI, false, bodyColor, 40f * u, shadow, u)
-            sp.typeface = Typeface.create(spec.font.family, Typeface.ITALIC)
-            sp.textAlign = Paint.Align.RIGHT
-            val sx = if (spec.style == CardStyle.EAST_CLASSIC && spec.photo == null) w - 230 * u else right
-            cv.drawText("— " + spec.signature.trim(), sx, h - 140 * u, sp)
+        if (spec.bigWord.isNotBlank()) {
+            bigWordBox(cv, u, (left + right) / 2f, area.bottom - sigReserve - 225 * u, spec)
         }
+
+        if (spec.signature.isNotBlank()) {
+            val sp = textPaint(spec, Lang.VI, false, bodyColor, 40f * u * calli, shadow, u)
+            sp.typeface = if (spec.font.calligraphy) CardFonts.typeface(spec.font, Typeface.NORMAL)
+            else Typeface.create(spec.font.family, Typeface.ITALIC)
+            sp.textAlign = Paint.Align.RIGHT
+            cv.drawText("— " + spec.signature.trim(), sigX, area.bottom - 25 * u, sp)
+        }
+    }
+
+    /** Ô giấy dó với chữ thư pháp lớn + ấn đỏ. */
+    private fun bigWordBox(cv: Canvas, u: Float, cx: Float, top: Float, spec: CardSpec) {
+        val s = 210 * u
+        val box = RectF(cx - s / 2, top, cx + s / 2, top + s)
+        cv.drawRoundRect(RectF(box.left + 5 * u, box.top + 7 * u, box.right + 5 * u, box.bottom + 7 * u), 12 * u, 12 * u,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = alpha(Color.BLACK, 0.25f) })
+        cv.drawRoundRect(box, 12 * u, 12 * u, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#F6ECD6") })
+        cv.drawRoundRect(RectF(box.left + 8 * u, box.top + 8 * u, box.right - 8 * u, box.bottom - 8 * u), 8 * u, 8 * u,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#C9A96B"); style = Paint.Style.STROKE; strokeWidth = 1.5f * u })
+        val tp = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#1E1A16"); typeface = CardFonts.bigWord(spec.font); textAlign = Paint.Align.CENTER
+            textSize = 150 * u; textLocale = Lang.VI.locale
+        }
+        val word = spec.bigWord.trim()
+        while (tp.measureText(word) > s * 0.86f && tp.textSize > 30 * u) tp.textSize *= 0.92f
+        val fm = tp.fontMetrics
+        cv.drawText(word, cx, box.centerY() - (fm.ascent + fm.descent) / 2 - 6 * u, tp)
+        val sealS = 34 * u
+        val seal = RectF(box.right - sealS - 14 * u, box.bottom - sealS - 14 * u, box.right - 14 * u, box.bottom - 14 * u)
+        cv.drawRect(seal, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#C62828") })
+        cv.drawRect(RectF(seal.left + 5 * u, seal.top + 5 * u, seal.right - 5 * u, seal.bottom - 5 * u),
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#F6ECD6"); style = Paint.Style.STROKE; strokeWidth = 2 * u })
     }
 
     private fun textPaint(spec: CardSpec, l: Lang, bold: Boolean, color: Int, size: Float, shadow: Boolean, u: Float): TextPaint =

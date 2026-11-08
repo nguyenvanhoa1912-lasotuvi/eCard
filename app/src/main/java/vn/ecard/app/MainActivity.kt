@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        vn.ecard.app.render.CardFonts.init(applicationContext)
         ReminderWorker.ensureChannel(this)
         ReminderWorker.schedule(this)
         handleIntent(intent)

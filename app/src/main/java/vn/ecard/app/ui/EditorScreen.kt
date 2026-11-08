@@ -82,6 +82,8 @@ import vn.ecard.app.render.CardRenderer
 import vn.ecard.app.render.CardSpec
 import vn.ecard.app.render.CardStyle
 import vn.ecard.app.render.Tone
+import vn.ecard.app.render.ThemeFrames
+import vn.ecard.app.render.BIG_WORDS
 
 private fun specFor(o: Occasion, phrase: Phrase?, old: CardSpec? = null): CardSpec {
     val ph = phrase ?: PhraseLibrary.byOccasion(o).firstOrNull()
@@ -89,6 +91,7 @@ private fun specFor(o: Occasion, phrase: Phrase?, old: CardSpec? = null): CardSp
     return base.copy(
         occasion = o,
         tone = if (old == null || old.tone == Tone.auto(old.occasion)) Tone.auto(o) else old.tone,
+        frame = if (ThemeFrames.has(o)) (if (old != null && old.frame > 0 && ThemeFrames.has(old.occasion)) old.frame else 1) else 0,
         title = Lang.values().associateWith { o.title.get(it) },
         message = if (ph != null) Lang.values().associateWith { ph.text.get(it) } else emptyMap()
     )
@@ -221,24 +224,50 @@ private fun Chip(selected: Boolean, text: String, onClick: () -> Unit) {
 
 @Composable
 private fun TemplateTab(spec: CardSpec, onChange: (CardSpec) -> Unit) {
-    Label("Phong cách")
+    if (ThemeFrames.has(spec.occasion)) {
+        Label("Khung theo chủ đề")
+        val labels = ThemeFrames.labels(spec.occasion)
+        val frameThumbs = remember(spec.occasion, spec.aspect) {
+            (1..labels.size).associateWith {
+                CardRenderer.render(spec.copy(frame = it, photo = null, message = emptyMap(), signature = "", bigWord = "", langs = listOf(spec.langs.firstOrNull() ?: Lang.VI)), 0.12f).asImageBitmap()
+            }
+        }
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            labels.forEachIndexed { idx, name ->
+                val f = idx + 1
+                val sel = spec.frame == f && spec.photo == null
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(86.dp).clickable { onChange(spec.copy(frame = f, photo = null)) }) {
+                    Image(
+                        frameThumbs.getValue(f), name,
+                        modifier = Modifier
+                            .width(78.dp)
+                            .aspectRatio(spec.aspect.w.toFloat() / spec.aspect.h)
+                            .border(if (sel) 3.dp else 1.dp, if (sel) EC.Gold else EC.Muted.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                    )
+                    Text(name, fontSize = 11.sp, color = if (sel) EC.Gold else EC.Text, maxLines = 2, lineHeight = 13.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            }
+        }
+    }
+    Label(if (ThemeFrames.has(spec.occasion)) "Hoặc phong cách chung" else "Phong cách")
     // Ảnh thu nhỏ của 4 phong cách
     val thumbs = remember(spec.occasion, spec.tone, spec.aspect, spec.photo) {
         CardStyle.values().associateWith {
-            CardRenderer.render(spec.copy(style = it, message = emptyMap(), signature = "", langs = listOf(spec.langs.firstOrNull() ?: Lang.VI)), 0.12f).asImageBitmap()
+            CardRenderer.render(spec.copy(style = it, frame = 0, message = emptyMap(), signature = "", bigWord = "", langs = listOf(spec.langs.firstOrNull() ?: Lang.VI)), 0.12f).asImageBitmap()
         }
     }
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         CardStyle.values().forEach { st ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onChange(spec.copy(style = st)) }) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onChange(spec.copy(style = st, frame = 0)) }) {
                 Image(
                     thumbs.getValue(st), st.label,
                     modifier = Modifier
                         .width(78.dp)
                         .aspectRatio(spec.aspect.w.toFloat() / spec.aspect.h)
-                        .border(if (spec.style == st) 3.dp else 1.dp, if (spec.style == st) EC.Gold else EC.Muted.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                        .border(if (spec.style == st && spec.frame == 0) 3.dp else 1.dp, if (spec.style == st && spec.frame == 0) EC.Gold else EC.Muted.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
                 )
-                Text(st.short, fontSize = 12.sp, color = if (spec.style == st) EC.Gold else EC.Text)
+                Text(st.short, fontSize = 12.sp, color = if (spec.style == st && spec.frame == 0) EC.Gold else EC.Text)
             }
         }
     }
@@ -316,7 +345,18 @@ private val swatches = listOf(
 @Composable
 private fun TextTab(spec: CardSpec, onChange: (CardSpec) -> Unit) {
     Label("Kiểu chữ")
-    ChipRow { CardFont.values().forEach { f -> Chip(spec.font == f, f.label) { onChange(spec.copy(font = f)) } } }
+    ChipRow { CardFont.values().filter { !it.calligraphy }.forEach { f -> Chip(spec.font == f, f.label) { onChange(spec.copy(font = f)) } } }
+    Label("Thư pháp tiếng Việt")
+    ChipRow { CardFont.values().filter { it.calligraphy }.forEach { f -> Chip(spec.font == f, "✒️ " + f.label) { onChange(spec.copy(font = f)) } } }
+    Label("Chữ thư pháp lớn (ô giấy dó + ấn đỏ)")
+    ChipRow {
+        Chip(spec.bigWord.isBlank(), "Không") { onChange(spec.copy(bigWord = "")) }
+        BIG_WORDS.forEach { wd -> Chip(spec.bigWord == wd, wd) { onChange(spec.copy(bigWord = wd)) } }
+    }
+    OutlinedTextField(
+        value = spec.bigWord, onValueChange = { onChange(spec.copy(bigWord = it.take(8))) },
+        modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Hoặc tự gõ chữ (tối đa 8 ký tự)") }
+    )
     Label("Cỡ chữ")
     Slider(value = spec.textScale, onValueChange = { onChange(spec.copy(textScale = it)) }, valueRange = 0.6f..1.5f)
     Label("Vị trí chữ (lên – xuống)")

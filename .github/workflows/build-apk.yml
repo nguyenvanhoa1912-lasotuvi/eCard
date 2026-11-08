@@ -34,6 +34,14 @@ jobs:
           set -o pipefail
           gradle :app:assembleRelease 2>&1 | tee build.log
 
+      - name: Ảnh xem trước khung thiệp (Robolectric)
+        continue-on-error: true
+        run: |
+          gradle :app:testDebugUnitTest --tests "vn.ecard.app.RenderPreviewTest" 2>&1 | tail -40
+          pip install -q pillow || true
+          python3 .github/scripts/contact.py app/build/previews previews.png || true
+          ls -la previews.png app/build/previews || true
+
       - name: Giải mã khoá tải lên (nếu đã cài Secrets)
         id: key
         env:
@@ -89,7 +97,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete latest --yes --cleanup-tag || true
-          FILES="eCard.apk"; [ -f eCard.aab ] && FILES="$FILES eCard.aab"
+          FILES="eCard.apk"; [ -f eCard.aab ] && FILES="$FILES eCard.aab"; [ -f previews.png ] && FILES="$FILES previews.png"
           gh release create latest $FILES \
             --title "eCard - Tự Tạo Thiệp – bản ${GITHUB_RUN_NUMBER}" \
             --notes "Build tự động từ commit ${GITHUB_SHA::7} (versionCode ${GITHUB_RUN_NUMBER}).

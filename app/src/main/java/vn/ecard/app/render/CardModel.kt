@@ -2,6 +2,7 @@ package vn.ecard.app.render
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Typeface
 import vn.ecard.app.data.Lang
 import vn.ecard.app.data.Occasion
 
@@ -18,12 +19,37 @@ enum class Aspect(val label: String, val w: Int, val h: Int) {
     STORY("9:16 (Story)", 1080, 1920)
 }
 
-enum class CardFont(val label: String, val family: String) {
+enum class CardFont(val label: String, val family: String, val calligraphy: Boolean = false) {
     SERIF("Có chân", "serif"),
     SANS("Không chân", "sans-serif"),
     SCRIPT("Viết tay", "cursive"),
-    CONDENSED("Chữ hẹp", "sans-serif-condensed")
+    CONDENSED("Chữ hẹp", "sans-serif-condensed"),
+    CALLI_BOLD("Thư pháp đậm", "splash", true),
+    CALLI_LIGHT("Thư pháp thanh", "petemoss", true)
 }
+
+/** Phông thư pháp (OFL) nạp từ res/font. Gọi init() một lần khi mở app. */
+object CardFonts {
+    private var splash: Typeface? = null
+    private var petemoss: Typeface? = null
+
+    fun init(ctx: android.content.Context) {
+        if (splash == null) splash = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.splash) }.getOrNull()
+        if (petemoss == null) petemoss = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.petemoss) }.getOrNull()
+    }
+
+    fun typeface(f: CardFont, style: Int): Typeface = when (f) {
+        CardFont.CALLI_BOLD -> splash ?: Typeface.create(Typeface.SERIF, style)
+        CardFont.CALLI_LIGHT -> petemoss ?: Typeface.create(Typeface.SERIF, style)
+        else -> Typeface.create(f.family, style)
+    }
+
+    /** Phông cho ô chữ thư pháp lớn. */
+    fun bigWord(f: CardFont): Typeface = if (f == CardFont.CALLI_LIGHT) typeface(f, 0) else typeface(CardFont.CALLI_BOLD, 0)
+}
+
+/** Các chữ thư pháp lớn gợi ý. */
+val BIG_WORDS = listOf("Phúc", "Lộc", "Thọ", "An", "Tâm", "Đức", "Nhẫn", "Hiếu", "Duyên", "Phát", "Xuân", "Hỷ")
 
 class Palette(
     val deep1: Int, val deep2: Int,
@@ -72,5 +98,9 @@ data class CardSpec(
     val textScale: Float = 1f,
     val textOffset: Float = 0f,
     val aspect: Aspect = Aspect.PORTRAIT,
-    val textColor: Int? = null
+    val textColor: Int? = null,
+    /** 0 = dùng phong cách chung; 1..3 = khung chủ đề riêng của dịp. */
+    val frame: Int = 0,
+    /** Chữ thư pháp lớn (rỗng = không dùng). */
+    val bigWord: String = ""
 )
