@@ -32,7 +32,7 @@ jobs:
       - name: Build APK (release – cài tay)
         run: |
           set -o pipefail
-          gradle :app:assembleRelease 2>&1 | tee build.log
+          gradle :app:assembleGithub 2>&1 | tee build.log
 
       - name: Ảnh xem trước khung thiệp (Robolectric)
         continue-on-error: true
@@ -80,7 +80,7 @@ jobs:
           done < errors.txt
 
       - name: Đổi tên APK
-        run: cp app/build/outputs/apk/release/app-release.apk eCard.apk
+        run: cp app/build/outputs/apk/github/app-github.apk eCard.apk
 
       - name: Tải lên mục Artifacts
         uses: actions/upload-artifact@v4
@@ -101,5 +101,5 @@ jobs:
           gh release create latest $FILES \
             --title "eCard - Tự Tạo Thiệp – bản ${GITHUB_RUN_NUMBER}" \
             --notes "Build tự động từ commit ${GITHUB_SHA::7} (versionCode ${GITHUB_RUN_NUMBER}).
-          - eCard.apk: cài trực tiếp lên điện thoại.
+          - eCard.apk: bản GitHub \"eCard (GitHub)\", cài song song với bản Google Play.
           - eCard.aab: tải lên Google Play Console (kiểm thử kín / phát hành)."

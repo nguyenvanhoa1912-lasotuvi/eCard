@@ -39,9 +39,20 @@ android {
 
     buildTypes {
         debug {
+            manifestPlaceholders["appLabel"] = "@string/app_name"
             signingConfig = signingConfigs.getByName("fixed")
         }
+        // Bản cài tay từ GitHub: app riêng, cài song song với bản Google Play
+        create("github") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".github"
+            versionNameSuffix = "-github"
+            signingConfig = signingConfigs.getByName("fixed")
+            manifestPlaceholders["appLabel"] = "eCard (GitHub)"
+            matchingFallbacks += listOf("release")
+        }
         release {
+            manifestPlaceholders["appLabel"] = "@string/app_name"
             // APK cài tay: khoá cố định; AAB cho Google Play: khoá tải lên
             signingConfig = signingConfigs.findByName("upload") ?: signingConfigs.getByName("fixed")
             isMinifyEnabled = true
