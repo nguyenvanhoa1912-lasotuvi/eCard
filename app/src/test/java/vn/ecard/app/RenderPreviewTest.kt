@@ -34,7 +34,7 @@ class RenderPreviewTest {
         for (o in occs) {
             val ph = PhraseLibrary.byOccasion(o).first()
             for (f in 1..ThemeFrames.labels(o).size) {
-                val font = when (f) { 2 -> CardFont.CALLI_BOLD; 3 -> CardFont.CALLI_LIGHT; else -> CardFont.SERIF }
+                val font = listOf(CardFont.SERIF, CardFont.CALLI_BOLD, CardFont.CALLI_LIGHT, CardFont.CALLI_BRUSH)[(o.ordinal + f) % 4]
                 val spec = CardSpec(
                     occasion = o, frame = f,
                     langs = listOf(Lang.VI, Lang.ZH),

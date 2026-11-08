@@ -19,33 +19,37 @@ enum class Aspect(val label: String, val w: Int, val h: Int) {
     STORY("9:16 (Story)", 1080, 1920)
 }
 
-enum class CardFont(val label: String, val family: String, val calligraphy: Boolean = false) {
+enum class CardFont(val label: String, val family: String, val calligraphy: Boolean = false, val scale: Float = 1f) {
     SERIF("Có chân", "serif"),
     SANS("Không chân", "sans-serif"),
     SCRIPT("Viết tay", "cursive"),
     CONDENSED("Chữ hẹp", "sans-serif-condensed"),
-    CALLI_BOLD("Thư pháp đậm", "splash", true),
-    CALLI_LIGHT("Thư pháp thanh", "petemoss", true)
+    CALLI_BOLD("Thư pháp đậm", "splash", true, 1.2f),
+    CALLI_LIGHT("Thư pháp thanh", "petemoss", true, 1.5f),
+    CALLI_BRUSH("Thư pháp bút lông", "waterbrush", true, 1.3f)
 }
 
 /** Phông thư pháp (OFL) nạp từ res/font. Gọi init() một lần khi mở app. */
 object CardFonts {
     private var splash: Typeface? = null
     private var petemoss: Typeface? = null
+    private var waterbrush: Typeface? = null
 
     fun init(ctx: android.content.Context) {
         if (splash == null) splash = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.splash) }.getOrNull()
         if (petemoss == null) petemoss = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.petemoss) }.getOrNull()
+        if (waterbrush == null) waterbrush = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.waterbrush) }.getOrNull()
     }
 
     fun typeface(f: CardFont, style: Int): Typeface = when (f) {
         CardFont.CALLI_BOLD -> splash ?: Typeface.create(Typeface.SERIF, style)
         CardFont.CALLI_LIGHT -> petemoss ?: Typeface.create(Typeface.SERIF, style)
+        CardFont.CALLI_BRUSH -> waterbrush ?: Typeface.create(Typeface.SERIF, style)
         else -> Typeface.create(f.family, style)
     }
 
     /** Phông cho ô chữ thư pháp lớn. */
-    fun bigWord(f: CardFont): Typeface = if (f == CardFont.CALLI_LIGHT) typeface(f, 0) else typeface(CardFont.CALLI_BOLD, 0)
+    fun bigWord(f: CardFont): Typeface = if (f == CardFont.CALLI_LIGHT || f == CardFont.CALLI_BRUSH) typeface(f, 0) else typeface(CardFont.CALLI_BOLD, 0)
 }
 
 /** Các chữ thư pháp lớn gợi ý. */

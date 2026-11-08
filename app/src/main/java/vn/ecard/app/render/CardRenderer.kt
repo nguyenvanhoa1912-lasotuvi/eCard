@@ -180,7 +180,7 @@ object CardRenderer {
         val bigReserve = if (spec.bigWord.isNotBlank()) 240 * u else 0f
         val top = area.top
         val bottom = max(top + 120 * u, area.bottom - sigReserve - bigReserve)
-        val calli = if (spec.font.calligraphy) 1.18f else 1f
+        val calli = spec.font.scale
 
         var s = spec.textScale
         var blocks: List<Triple<StaticLayout, Float, Boolean>> = emptyList()
@@ -190,14 +190,14 @@ object CardRenderer {
             langs.forEachIndexed { i, l ->
                 val t = spec.title[l].orEmpty().trim()
                 if (t.isNotEmpty()) {
-                    val tp = textPaint(spec, l, true, titleColor, (if (i == 0) 84f else 50f) * u * s * calli, shadow, u)
+                    val tp = textPaint(spec, l, true, titleColor, (if (i == 0) 84f else 50f) * u * s * (if (l == Lang.ZH) 1f else calli), shadow, u)
                     b += Triple(layout(t, tp, width), if (b.isEmpty()) 0f else 14 * u * s, true)
                 }
             }
             val titleCount = b.size
             val msgs = langs.mapNotNull { l -> spec.message[l]?.trim()?.takeIf { it.isNotEmpty() }?.let { l to it } }
             msgs.forEachIndexed { i, (l, m) ->
-                val size = (if (msgs.size == 1) 46f else if (i == 0) 42f else 36f) * u * s * calli
+                val size = (if (msgs.size == 1) 46f else if (i == 0) 42f else 36f) * u * s * (if (l == Lang.ZH) 1f else calli)
                 val mp = textPaint(spec, l, false, bodyColor, size, shadow, u)
                 val gap = if (i == 0) (if (titleCount > 0) 110 * u * s else 0f) else 34 * u * s
                 b += Triple(layout(m, mp, width), gap, false)
