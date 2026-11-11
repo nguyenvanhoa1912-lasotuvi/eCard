@@ -153,7 +153,7 @@ object PaintingRenderer {
     private fun mountains(cv: Canvas, x: Ctx, baseFrac: Float) {
         val r = x.area; val u = x.u
         val base = r.top + r.height() * baseFrac
-        for ((k, al) in listOf(0.10f, 0.16f, 0.26f).withIndex()) {
+        for ((k, al) in listOf(0.16f, 0.26f, 0.40f).withIndex()) {
             val y0 = base + k * 40 * u
             val path = Path().apply {
                 moveTo(r.left, r.bottom); lineTo(r.left, y0)
@@ -167,13 +167,14 @@ object PaintingRenderer {
                 lineTo(r.right, r.bottom); close()
             }
             val mp = blurred(a(x.inkMotif, al), (10 - k * 3) * u)
-            mp.shader = LinearGradient(0f, y0 - 160 * u, 0f, r.bottom, a(x.inkMotif, al), a(x.inkMotif, al * 0.12f), Shader.TileMode.CLAMP)
+            mp.shader = LinearGradient(0f, y0 - 150 * u, 0f, y0 + 120 * u + (r.bottom - y0) * 0.5f, a(x.inkMotif, al), a(x.inkMotif, al * 0.05f), Shader.TileMode.CLAMP)
             cv.drawPath(path, mp)
         }
         // sương
         val mist = Paint()
-        mist.shader = LinearGradient(0f, base - 60 * u, 0f, base + 80 * u, Color.TRANSPARENT, a(if (x.dark) Color.BLACK else Color.WHITE, 0.35f), Shader.TileMode.CLAMP)
-        cv.drawRect(r.left, base - 60 * u, r.right, base + 80 * u, mist)
+        val mc = if (x.dark) Color.BLACK else Color.WHITE
+        mist.shader = LinearGradient(0f, base - 40 * u, 0f, base + 160 * u, intArrayOf(Color.TRANSPARENT, a(mc, 0.30f), Color.TRANSPARENT), floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP)
+        cv.drawRect(r.left, base - 40 * u, r.right, base + 160 * u, mist)
     }
 
     private fun bambooLeaf(cv: Canvas, x0: Float, y0: Float, ang: Float, len: Float, wd: Float, col: Int) {
