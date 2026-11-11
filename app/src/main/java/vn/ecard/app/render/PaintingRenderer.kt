@@ -71,6 +71,7 @@ object PaintingRenderer {
                 val clip = Path().apply { addRoundRect(area, 70 * u, 70 * u, Path.Direction.CW) }
                 cv.clipPath(clip)
             }
+            if (spec.layout == PaintLayout.HAN_VERTICAL) cv.scale(-1f, 1f, w / 2f, 0f)
             when (spec.motif) {
                 Motif.BAMBOO_BOAT -> { mountains(cv, ctx, 0.72f); bamboo(cv, ctx); boat(cv, ctx) }
                 Motif.PLUM -> plum(cv, ctx, c("#D32F2F"), c("#6D0F0F"), spec.layout)
@@ -165,7 +166,9 @@ object PaintingRenderer {
                 }
                 lineTo(r.right, r.bottom); close()
             }
-            cv.drawPath(path, blurred(a(x.inkMotif, al), (10 - k * 3) * u))
+            val mp = blurred(a(x.inkMotif, al), (10 - k * 3) * u)
+            mp.shader = LinearGradient(0f, y0 - 160 * u, 0f, r.bottom, a(x.inkMotif, al), a(x.inkMotif, al * 0.12f), Shader.TileMode.CLAMP)
+            cv.drawPath(path, mp)
         }
         // sương
         val mist = Paint()
@@ -251,7 +254,8 @@ object PaintingRenderer {
     /** Vẽ nét cành có độ dày thay đổi theo đường cong bậc 2. */
     private fun brushBranch(cv: Canvas, p0x: Float, p0y: Float, p1x: Float, p1y: Float, p2x: Float, p2y: Float, w0: Float, w1: Float, col: Int): List<Pair<Float, Float>> {
         val pts = ArrayList<Pair<Float, Float>>()
-        val n = 40
+        val len = kotlin.math.hypot((p1x - p0x).toDouble(), (p1y - p0y).toDouble()) + kotlin.math.hypot((p2x - p1x).toDouble(), (p2y - p1y).toDouble())
+        val n = max(40, (len / max(1.0, min(w0, w1) * 0.25)).toInt()).coerceAtMost(900)
         val paint = fill(col)
         for (i in 0..n) {
             val t = i / n.toFloat()
@@ -326,7 +330,7 @@ object PaintingRenderer {
     private fun pine(cv: Canvas, x: Ctx) {
         val r = x.area; val u = x.u
         val ink = a(x.inkMotif, 0.9f)
-        val main = brushBranch(cv, r.right + 10 * u, r.top + 90 * u, r.right - 200 * u, r.top + 60 * u, r.right - 380 * u, r.top + 200 * u, 22 * u, 8 * u, ink)
+        val main = brushBranch(cv, r.right + 10 * u, r.top + 60 * u, r.right - 170 * u, r.top + 40 * u, r.right - 300 * u, r.top + 150 * u, 20 * u, 7 * u, ink)
         val needle = stroke(a(c(if (x.dark) "#B9C9A8" else "#2E4A30"), 0.85f), 3 * u)
         for (k in 2..8) {
             val (bx, by) = main[k * main.size / 9]
@@ -373,6 +377,7 @@ object PaintingRenderer {
         spec.photo != null || spec.motif == Motif.NONE -> 0.08f * w
         spec.motif == Motif.BAMBOO_BOAT -> 0.30f * w
         spec.motif == Motif.PLUM || spec.motif == Motif.PEACH -> 0.30f * w
+        spec.motif == Motif.PINE_MOUNTAIN || spec.motif == Motif.MOON -> 0.22f * w
         else -> 0.12f * w
     }
 
@@ -502,7 +507,7 @@ object PaintingRenderer {
 
         // các cột chữ nhỏ, đọc từ phải sang trái
         val clauses = spec.body.split(Regex("[，。；？！、,.;?!]")).map { it.trim() }.filter { it.isNotEmpty() }
-        val minLeft = r.left + pad
+        val minLeft = r.left + pad + (if (spec.photo == null && (spec.motif == Motif.BAMBOO_BOAT || spec.motif == Motif.PLUM || spec.motif == Motif.PEACH)) 0.24f * w else 0f)
         var small = 0.055f * w * spec.textScale
         repeat(12) {
             val perCol = max(1, (regionH / (small * 1.12f)).toInt())
