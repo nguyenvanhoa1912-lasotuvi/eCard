@@ -77,6 +77,7 @@ private fun App(external: EditRequest?, consumeExternal: () -> Unit) {
     var events by remember { mutableStateOf<List<CalEvent>>(repo.load()) }
     var tab by remember { mutableIntStateOf(0) }
     var editor by remember { mutableStateOf<EditRequest?>(null) }
+    var painting by remember { mutableStateOf<vn.ecard.app.render.PaintLayout?>(null) }
 
     val notifPerm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) ReminderWorker.runNow(ctx)
@@ -98,7 +99,10 @@ private fun App(external: EditRequest?, consumeExternal: () -> Unit) {
 
     Box(Modifier.fillMaxSize().background(EC.Bg).safeDrawingPadding()) {
         val req = editor
-        if (req != null) {
+        val pl = painting
+        if (pl != null) {
+            key(pl) { vn.ecard.app.ui.PaintingEditor(pl, onClose = { painting = null }) }
+        } else if (req != null) {
             key(req.stamp) { EditorScreen(req.occasion, req.phrase, onClose = { editor = null }) }
         } else {
             Column(Modifier.fillMaxSize()) {
@@ -106,7 +110,8 @@ private fun App(external: EditRequest?, consumeExternal: () -> Unit) {
                     when (tab) {
                         0 -> HomeScreen(
                             upcoming = events.filter { it.enabled }.sortedBy { it.daysLeft() }.filter { it.daysLeft() <= 30 },
-                            onOpen = { o, _ -> editor = EditRequest(o) }
+                            onOpen = { o, _ -> editor = EditRequest(o) },
+                            onOpenPainting = { painting = it }
                         )
                         1 -> LibraryScreen(onUse = { ph -> editor = EditRequest(ph.occasion, ph) })
                         2 -> CalendarScreen(

@@ -206,16 +206,16 @@ fun EditorScreen(occasion: Occasion, phrase: Phrase?, onClose: () -> Unit) {
 }
 
 @Composable
-private fun Label(t: String) =
+internal fun Label(t: String) =
     Text(t, color = EC.Gold, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
 
 @Composable
-private fun ChipRow(content: @Composable () -> Unit) {
+internal fun ChipRow(content: @Composable () -> Unit) {
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) { content() }
 }
 
 @Composable
-private fun Chip(selected: Boolean, text: String, onClick: () -> Unit) {
+internal fun Chip(selected: Boolean, text: String, onClick: () -> Unit) {
     FilterChip(
         selected = selected, onClick = onClick, label = { Text(text, fontSize = 13.sp) },
         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = EC.Gold, selectedLabelColor = Color(0xFF2A1E00))

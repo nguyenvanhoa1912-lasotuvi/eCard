@@ -34,10 +34,12 @@ object CardFonts {
     private var splash: Typeface? = null
     private var petemoss: Typeface? = null
     private var waterbrush: Typeface? = null
+    private var yujiboku: Typeface? = null
 
     fun init(ctx: android.content.Context) {
         if (splash == null) splash = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.splash) }.getOrNull()
         if (petemoss == null) petemoss = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.petemoss) }.getOrNull()
+        if (yujiboku == null) yujiboku = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.yujiboku) }.getOrNull()
         if (waterbrush == null) waterbrush = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.waterbrush) }.getOrNull()
     }
 
@@ -47,6 +49,9 @@ object CardFonts {
         CardFont.CALLI_BRUSH -> waterbrush ?: Typeface.create(Typeface.SERIF, style)
         else -> Typeface.create(f.family, style)
     }
+
+    /** Phông chữ Hán bút lông (Phồn thể), dùng cho tranh thư pháp và ấn son. */
+    fun han(): Typeface = yujiboku ?: Typeface.create(Typeface.SERIF, Typeface.BOLD)
 
     /** Phông cho ô chữ thư pháp lớn. */
     fun bigWord(f: CardFont): Typeface = if (f == CardFont.CALLI_LIGHT || f == CardFont.CALLI_BRUSH) typeface(f, 0) else typeface(CardFont.CALLI_BOLD, 0)

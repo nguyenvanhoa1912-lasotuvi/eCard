@@ -43,11 +43,12 @@ import androidx.compose.ui.unit.sp
 import vn.ecard.app.data.CalEvent
 import vn.ecard.app.data.Category
 import vn.ecard.app.data.Occasion
+import vn.ecard.app.render.PaintLayout
 
 const val PRIVACY_URL = "https://nguyenvanhoa1912-lasotuvi.github.io/eCard/privacy-policy.html"
 
 @Composable
-fun HomeScreen(upcoming: List<CalEvent>, onOpen: (Occasion, String?) -> Unit) {
+fun HomeScreen(upcoming: List<CalEvent>, onOpen: (Occasion, String?) -> Unit, onOpenPainting: (PaintLayout) -> Unit = {}) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         contentPadding = PaddingValues(14.dp),
@@ -100,6 +101,30 @@ fun HomeScreen(upcoming: List<CalEvent>, onOpen: (Occasion, String?) -> Unit) {
                             )
                         }
                     }
+                }
+            }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Text(
+                "TRANH THƯ PHÁP", color = EC.Gold, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+        items(PaintLayout.values().toList()) { l ->
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(104.dp)
+                    .background(Brush.verticalGradient(listOf(Color(0xFFF3E7CF), Color(0xFFD9C7A3))), RoundedCornerShape(14.dp))
+                    .border(1.dp, EC.Gold.copy(alpha = 0.6f), RoundedCornerShape(14.dp))
+                    .clickable { onOpenPainting(l) }
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(l.icon, fontSize = 28.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(l.label, color = Color(0xFF3B2A1A), fontSize = 12.sp, textAlign = TextAlign.Center, lineHeight = 14.sp, maxLines = 2, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
