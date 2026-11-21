@@ -26,7 +26,11 @@ enum class CardFont(val label: String, val family: String, val calligraphy: Bool
     CONDENSED("Chữ hẹp", "sans-serif-condensed"),
     CALLI_BOLD("Thư pháp đậm", "splash", true, 1.2f),
     CALLI_LIGHT("Thư pháp thanh", "petemoss", true, 1.5f),
-    CALLI_BRUSH("Thư pháp bút lông", "waterbrush", true, 1.3f)
+    CALLI_BRUSH("Thư pháp bút lông", "waterbrush", true, 1.3f),
+    HAND_SOFT("Viết tay mềm", "playwrite_is", true, 1.0f),
+    HAND_BOLD("Viết tay đậm", "merienda", true, 1.0f),
+    BRUSH_CAPS("Bút lông in hoa", "gamaamli", true, 1.0f),
+    HAND_GUIDES("Tập viết (dòng kẻ)", "playwrite_guides", true, 1.0f)
 }
 
 /** Phông thư pháp (OFL) nạp từ res/font. Gọi init() một lần khi mở app. */
@@ -35,18 +39,29 @@ object CardFonts {
     private var petemoss: Typeface? = null
     private var waterbrush: Typeface? = null
     private var yujiboku: Typeface? = null
+    private val extra = HashMap<CardFont, Typeface>()
 
     fun init(ctx: android.content.Context) {
         if (splash == null) splash = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.splash) }.getOrNull()
         if (petemoss == null) petemoss = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.petemoss) }.getOrNull()
         if (yujiboku == null) yujiboku = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.yujiboku) }.getOrNull()
         if (waterbrush == null) waterbrush = runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, vn.ecard.app.R.font.waterbrush) }.getOrNull()
+        val more = mapOf(
+            CardFont.HAND_SOFT to vn.ecard.app.R.font.playwrite_is,
+            CardFont.HAND_BOLD to vn.ecard.app.R.font.merienda,
+            CardFont.BRUSH_CAPS to vn.ecard.app.R.font.gamaamli,
+            CardFont.HAND_GUIDES to vn.ecard.app.R.font.playwrite_guides
+        )
+        for ((f, id) in more) if (!extra.containsKey(f))
+            runCatching { androidx.core.content.res.ResourcesCompat.getFont(ctx, id) }.getOrNull()?.let { extra[f] = it }
     }
 
     fun typeface(f: CardFont, style: Int): Typeface = when (f) {
         CardFont.CALLI_BOLD -> splash ?: Typeface.create(Typeface.SERIF, style)
         CardFont.CALLI_LIGHT -> petemoss ?: Typeface.create(Typeface.SERIF, style)
         CardFont.CALLI_BRUSH -> waterbrush ?: Typeface.create(Typeface.SERIF, style)
+        CardFont.HAND_SOFT, CardFont.HAND_BOLD, CardFont.BRUSH_CAPS, CardFont.HAND_GUIDES ->
+            extra[f] ?: Typeface.create(Typeface.SERIF, style)
         else -> Typeface.create(f.family, style)
     }
 
@@ -54,7 +69,7 @@ object CardFonts {
     fun han(): Typeface = yujiboku ?: Typeface.create(Typeface.SERIF, Typeface.BOLD)
 
     /** Phông cho ô chữ thư pháp lớn. */
-    fun bigWord(f: CardFont): Typeface = if (f == CardFont.CALLI_LIGHT || f == CardFont.CALLI_BRUSH) typeface(f, 0) else typeface(CardFont.CALLI_BOLD, 0)
+    fun bigWord(f: CardFont): Typeface = if (f.calligraphy) typeface(f, 0) else typeface(CardFont.CALLI_BOLD, 0)
 }
 
 /** Các chữ thư pháp lớn gợi ý. */

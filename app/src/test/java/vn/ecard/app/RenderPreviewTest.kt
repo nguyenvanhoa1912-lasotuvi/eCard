@@ -50,4 +50,27 @@ class RenderPreviewTest {
             }
         }
     }
+
+    @Test
+    fun renderNewFonts() {
+        val ctx = ApplicationProvider.getApplicationContext<Context>()
+        CardFonts.init(ctx)
+        val out = File("build/previews").apply { mkdirs() }
+        val cases = listOf(
+            CardFont.HAND_SOFT to Occasion.BIRTHDAY, CardFont.HAND_BOLD to Occasion.TET,
+            CardFont.BRUSH_CAPS to Occasion.LONGEVITY, CardFont.HAND_GUIDES to Occasion.WEDDING
+        )
+        for ((i, c) in cases.withIndex()) {
+            val (font, o) = c
+            val ph = PhraseLibrary.byOccasion(o).first()
+            val spec = CardSpec(
+                occasion = o, frame = 1 + i % 3, langs = listOf(Lang.VI),
+                message = Lang.values().associateWith { ph.text.get(it) },
+                signature = "Ước nguyện – Gia đình Hòa", font = font,
+                bigWord = if (font == CardFont.BRUSH_CAPS) "Thọ" else ""
+            )
+            val bmp = CardRenderer.render(spec, 0.5f)
+            FileOutputStream(File(out, "99_FONT_${i + 1}_${font.name}.png")).use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        }
+    }
 }

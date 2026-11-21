@@ -346,7 +346,7 @@ private val swatches = listOf(
 private fun TextTab(spec: CardSpec, onChange: (CardSpec) -> Unit) {
     Label("Kiểu chữ")
     ChipRow { CardFont.values().filter { !it.calligraphy }.forEach { f -> Chip(spec.font == f, f.label) { onChange(spec.copy(font = f)) } } }
-    Label("Thư pháp tiếng Việt")
+    Label("Thư pháp & viết tay tiếng Việt")
     ChipRow { CardFont.values().filter { it.calligraphy }.forEach { f -> Chip(spec.font == f, "✒️ " + f.label) { onChange(spec.copy(font = f)) } } }
     Label("Chữ thư pháp lớn (ô giấy dó + ấn đỏ)")
     ChipRow {
